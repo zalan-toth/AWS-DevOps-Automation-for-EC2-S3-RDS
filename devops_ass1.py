@@ -22,7 +22,7 @@ KEY_FILE_LOCATION = "./awsec.pem"
 KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
 FILE_PATH_TO_INDEX_FILE = "./index.html"
-
+SETUP_RDS = False
 
 
 
@@ -58,17 +58,23 @@ try:
         systemctl enable httpd
         systemctl start httpd
         mysql_secure_installation
-        echo '<html>' > index.html
         TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
-        echo '<br>Instance ID: ' >> index.html
+        echo '<html lang="en"><head><meta charset="utf-8" /><link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5136/5136950.png" /><title>' >> index.html
         curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id >> index.html
+        echo '</title></head>' >> index.html
+        echo '<body style="background: black; color: white; font-size: 200%"><br>Instance ID: ' >> index.html
+        curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id >> index.html
+        echo '<br>Public IPv4: ' >> index.html
+        curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/public-ipv4 >> index.html
         echo '<br>Local IPv4: ' >> index.html
         curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/local-ipv4 >> index.html
         echo '<br>AZ: ' >> index.html
         curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/placement/availability-zone >> index.html
-        echo '<br>Instance Type: ' >> index.html
+        echo '<br>MAC address (eth0): ' >> index.html
+        curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/mac >> index.html
+        echo '<br>Instance type: ' >> index.html
         curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-type >> index.html
-        echo '<br>' >> index.html
+        echo '<br></body></html>' >> index.html
         cp index.html /var/www/html/index.html""",
         TagSpecifications=[
             {
@@ -204,7 +210,7 @@ except Exception as error:
 
 print(f"> Initiating URLs writing to txt file")
 try:
-    cmd1 = "touch ./ztoth-websites.txt"
+    cmd1 = "rm ./ztoth-websites.txt && touch ./ztoth-websites.txt"
     subprocess.run(cmd1, shell=True, check=True)
 
     cmd2 = f"echo 'http://{bucket_name}.s3-website-us-east-1.amazonaws.com' >> ./ztoth-websites.txt"
@@ -220,8 +226,7 @@ except Exception as error:
 # -----------------------------------------------------------------------------------------------
 # Extra stuff - MySQL RDBMS setup! https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds.html
 # -----------------------------------------------------------------------------------------------
-setupdb = True
-if setupdb == True:
+if SETUP_RDS == True:
     print(f"> Deploying Relational Database Service")
     rds = boto3.client('rds')
     endpointForDatabase = "NOTSET"
@@ -259,7 +264,7 @@ try:
     subprocess.run(cmd11, shell=True, check=True)
 
     #if setupdb == True:
-    #    cmd10 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'mysql -h {endpointForDatabase} -u admin -adminadmin -e \"CREATE DATABASE devops;SHOW DATABASES;\"'"
+    #    cmd10 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'mysql -h {endpointForDatabase} -u admin -padminadmin \"CREATE DATABASE devops;SHOW DATABASES;\"'"
     #    subprocess.run(cmd10, shell=True, check=True)
 
 
@@ -268,6 +273,7 @@ try:
 
     cmd13 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'chmod +x ./monitoring.sh && ./monitoring.sh'"
     subprocess.run(cmd13, shell=True, check=True)
+
 
 
     print("[SUCCESS] Monitoring script executed successfully")
@@ -291,7 +297,7 @@ SETUP COMPLETED
 
 if len(sys.argv) > 1 and sys.argv[1] == '1':
     print("[   !   ] First argument is 1, which means that the machine and s3 storage is initiated to be terminated and deleted 1 minute after setup completion")
-    time.sleep(60)  # Wait for 1 minute
+    time.sleep(30)  # Wait for 1 minute
     print("[   !   ] Cleanup begins!")
     try:
         print(f"> Deleting EC2 instance! Be patient. ({new_instance.id})")
@@ -309,7 +315,7 @@ if len(sys.argv) > 1 and sys.argv[1] == '1':
     except Exception as error:
         print(f"[ ERROR ] Error while deleting S3 bucket {bucket_name}: {error}")
 
-    if setupdb == True:
+    if SETUP_RDS == True:
         try:
             print("> Deleting RDS...")
             rds.delete_db_instance(
