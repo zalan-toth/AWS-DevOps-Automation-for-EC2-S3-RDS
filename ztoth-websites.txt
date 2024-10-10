@@ -1,2 +1,2 @@
-http://js6x5g-ztoth.s3-website-us-east-1.amazonaws.com
-http://ec2-98-82-186-183.compute-1.amazonaws.com
+http://vxdqm5-ztoth.s3-website-us-east-1.amazonaws.com
+http://ec2-34-228-237-35.compute-1.amazonaws.com

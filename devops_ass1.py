@@ -23,6 +23,7 @@ KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
 FILE_PATH_TO_INDEX_FILE = "./index.html"
 SETUP_RDS = False
+SETUP_DOCDB = True
 
 
 
@@ -252,6 +253,54 @@ if SETUP_RDS == True:
 else:
     print(f"> RDS is not set to deploy")
 
+
+# -----------------------------------------------------------------------------------------------
+# Extra stuff 2 - DocumentDB https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/docdb.html
+# -----------------------------------------------------------------------------------------------
+# HAS ISSUE
+# Access denied
+# You don't have permission to iam:GetRole. To request access, copy the following text and send it to your AWS administrator. Learn more about troubleshooting access denied errors.
+# User: arn:aws:sts::574555277277:assumed-role/voclabs/user3504676=Zalan_Toth
+# Action: iam:GetRole
+# Context: an identity-based policy explicitly denies the action
+# The code should be somewhat right, however there's no auto deletion like on other services as I'm not able to test it.
+
+if SETUP_DOCDB == True:
+    print(f"> Deploying DocumentDB Service")
+    docdb_client = boto3.client('docdb')
+    db_cluster_identifier = 'ztoth-cluster'
+    db_instance_identifier = 'ztoth-instance'
+    master_username = 'ztoth'
+    master_user_password = 'adminadmin'
+
+    print(f"> Creating DocumentDB Cluster")
+    try:
+        docdbcluster = docdb_client.create_db_cluster(
+            DBClusterIdentifier=db_cluster_identifier,
+            Engine='docdb',
+            MasterUsername=master_username,
+            MasterUserPassword=master_user_password,
+            VpcSecurityGroupIds=[SECURITY_GROUP_ID],
+            DBSubnetGroupName='default',  # The default one!
+            BackupRetentionPeriod=7,
+            PreferredBackupWindow='07:00-09:00'
+        )
+    except Exception as error:
+        print(f"[ ERROR ] Unable to create cluster: {error}")
+
+    print(f"> Creating DocumentDB Instance")
+    try:
+        docdbinstance = docdb_client.create_db_instance(
+            DBInstanceIdentifier=db_instance_identifier,
+            DBClusterIdentifier=db_cluster_identifier,
+            Engine='docdb',
+            DBInstanceClass='db.t3.micro',
+            PreferredMaintenanceWindow='sat:03:00-sat:04:00'
+        )
+    except Exception as error:
+        print(f"[ ERROR ] Unable to create docdb instance: {error}")
+else:
+    print(f"> DocumentDB is not set to deploy")
 
 # -----------------------------------------------------------------------------------------------
 # monitor.sh
