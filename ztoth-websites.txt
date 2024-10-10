@@ -35,3 +35,5 @@ http://8vogzf-ztoth.s3-website-us-east-1.amazonaws.com
 http://ec2-54-161-85-40.compute-1.amazonaws.com
 http://l4i8o0-ztoth.s3-website-us-east-1.amazonaws.com
 http://ec2-18-212-112-8.compute-1.amazonaws.com
+http://84lo3w-ztoth.s3-website-us-east-1.amazonaws.com
+http://ec2-98-82-168-69.compute-1.amazonaws.com

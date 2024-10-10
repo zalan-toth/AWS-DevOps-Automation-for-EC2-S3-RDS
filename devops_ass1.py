@@ -18,10 +18,10 @@ import random
 # -----------------------------------------------------------------------------------------------
 # PRECONFIGURATION
 # -----------------------------------------------------------------------------------------------
-KEY_FILE_LOCATION = "/home/zalan/PycharmProjects/DevOpsPy/AWS_DevOps_Automation_for_EC2-S3-RDS/awsec.pem"
+KEY_FILE_LOCATION = "./awsec.pem"
 KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
-FILE_PATH_TO_INDEX_FILE = "/home/zalan/PycharmProjects/DevOpsPy/AWS_DevOps_Automation_for_EC2-S3-RDS/index.html"
+FILE_PATH_TO_INDEX_FILE = "./index.html"
 
 
 
@@ -258,9 +258,9 @@ try:
     cmd11 = f"ssh -i {KEY_FILE_LOCATION} -o StrictHostKeyChecking=no ec2-user@{new_instance.public_ip_address} 'uname -a'"
     subprocess.run(cmd11, shell=True, check=True)
 
-    if setupdb == True:
-        cmd10 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'mysql -h {endpointForDatabase} -u admin -adminadmin -e \"CREATE DATABASE devops;SHOW DATABASES;\"'"
-        subprocess.run(cmd10, shell=True, check=True)
+    #if setupdb == True:
+    #    cmd10 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'mysql -h {endpointForDatabase} -u admin -adminadmin -e \"CREATE DATABASE devops;SHOW DATABASES;\"'"
+    #    subprocess.run(cmd10, shell=True, check=True)
 
 
     cmd12 = f"scp -i {KEY_FILE_LOCATION} monitoring.sh ec2-user@{new_instance.public_ip_address}:."
