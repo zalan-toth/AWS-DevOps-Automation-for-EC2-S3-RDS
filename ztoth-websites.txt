@@ -1,2 +1,2 @@
-http://vxdqm5-ztoth.s3-website-us-east-1.amazonaws.com
-http://ec2-34-228-237-35.compute-1.amazonaws.com
+http://mt4ngb-ztoth.s3-website-us-east-1.amazonaws.com
+http://ec2-54-162-80-92.compute-1.amazonaws.com

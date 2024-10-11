@@ -23,7 +23,7 @@ KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
 FILE_PATH_TO_INDEX_FILE = "./index.html"
 SETUP_RDS = False
-SETUP_DOCDB = True
+SETUP_DOCDB = False # Student account is not permitted to deploy DocumentDB Instance unfortunately, but the code should work itself.
 
 
 
