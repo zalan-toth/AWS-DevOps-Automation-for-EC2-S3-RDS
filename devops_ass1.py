@@ -9,12 +9,6 @@ import uuid
 import string
 import random
 
-
-
-
-
-
-
 # -----------------------------------------------------------------------------------------------
 # PRECONFIGURATION
 # -----------------------------------------------------------------------------------------------
@@ -23,16 +17,14 @@ KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
 FILE_PATH_TO_INDEX_FILE = "./index.html"
 SETUP_RDS = False
-SETUP_DOCDB = False # Student account is not permitted to deploy DocumentDB Instance unfortunately, but the code should work itself.
-
-
-
-
+SETUP_DOCDB = False  # Student account is not permitted to deploy DocumentDB Instance unfortunately, but the code should work itself.
+SETUP_DYNAMODB = True
 
 
 # Source for string gen: https://stackoverflow.com/questions/2257441/random-string-generation-with-upper-case-letters-and-digits
 def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
+
 
 print("--==--StartOfScript--==--")
 # -----------------------------------------------------------------------------------------------
@@ -124,26 +116,20 @@ try:
         Bucket=bucket_name
     )
 
-
-
     bucket_website = s3.BucketWebsite(bucket_name)
     bucket_website.put(WebsiteConfiguration=website_configuration)
 
     print(f"[SUCCESS] Bucket {bucket_name} created and configured!")
-
-
 
     print("> Uploading index.html file...")
     try:
         s3.Object(bucket_name, object_name).put(Body=open(file_path, 'rb'), ContentType='text/html')
         print(f"[SUCCESS] File {object_name} uploaded successfully!")
 
-        print(f"[SUCCESS] Visit the following URL to check the website: http://{bucket_name}.s3-website-us-east-1.amazonaws.com")
+        print(
+            f"[SUCCESS] Visit the following URL to check the website: http://{bucket_name}.s3-website-us-east-1.amazonaws.com")
     except Exception as upload_error:
         print(f"[ ERROR ] File upload failed: {upload_error}")
-
-
-
 
     print("> Uploading image file...")
     try:
@@ -152,7 +138,8 @@ try:
         s3.Object(bucket_name, 'logo.jpg').put(Body=open(image_path, 'rb'), ContentType='image/jpeg')
         print(f"[SUCCESS] Image uploaded successfully!")
 
-        print(f"[SUCCESS] Visit the following URL to check the image: http://{bucket_name}.s3-website-us-east-1.amazonaws.com/logo.jpg")
+        print(
+            f"[SUCCESS] Visit the following URL to check the image: http://{bucket_name}.s3-website-us-east-1.amazonaws.com/logo.jpg")
     except Exception as upload_error:
         print(f"[ ERROR ] Image upload failed: {upload_error}")
 
@@ -161,10 +148,6 @@ try:
 
 except Exception as bucket_error:
     print(f"[ ERROR ] Bucket creation failed: {bucket_error}")
-
-
-
-
 
 print(f"> Attempting to set bucket policy to gain public access for s3 website!")
 # Source: https://stackoverflow.com/questions/62769338/how-can-i-create-bucket-and-objects-with-not-public-access-using-boto3-in-aws
@@ -186,24 +169,23 @@ except Exception as public_access_error:
     print(f"[ ERROR ] Error while disabling public access block for the bucket: {public_access_error}")
 
 bucket_policy = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Sid": "PublicReadGetObject",
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "s3:GetObject",
-                "Resource": f"arn:aws:s3:::{bucket_name}/*"
-            }
-        ]
-    }
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": f"arn:aws:s3:::{bucket_name}/*"
+        }
+    ]
+}
 bucket_policy_string = json.dumps(bucket_policy)
 try:
     s3.Bucket(bucket_name).Policy().put(Policy=bucket_policy_string)
     print("[SUCCESS] Policy set success!")
 except Exception as error:
     print(f"[ ERROR ] Policy set failed: {error}")
-
 
 # -----------------------------------------------------------------------------------------------
 # ztoth-websites.txt write
@@ -222,7 +204,6 @@ try:
     print("[SUCCESS] Success writing to txt file")
 except Exception as error:
     print(f"[ ERROR ] Error while writing to txt file: {error}")
-
 
 # -----------------------------------------------------------------------------------------------
 # Extra stuff - MySQL RDBMS setup! https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds.html
@@ -252,7 +233,6 @@ if SETUP_RDS == True:
         print(f"[ ERROR ] Unable to create the database: {error}")
 else:
     print(f"> RDS is not set to deploy")
-
 
 # -----------------------------------------------------------------------------------------------
 # Extra stuff 2 - DocumentDB https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/docdb.html
@@ -301,6 +281,44 @@ if SETUP_DOCDB == True:
         print(f"[ ERROR ] Unable to create docdb instance: {error}")
 else:
     print(f"> DocumentDB is not set to deploy")
+# -----------------------------------------------------------------------------------------------
+# Extra stuff 3 - DynamoDB setup! https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html
+# -----------------------------------------------------------------------------------------------
+if SETUP_DYNAMODB == True:
+    print(f"> Deploying DynamoDB Service")
+    dynamodb = boto3.client('dynamodb')
+    table_name = 'DynamoTable'
+    attribute_definitions = [
+        {
+            'AttributeName': 'PrimaryKey',
+            'AttributeType': 'S'  # OR N for number
+        }
+    ]
+
+    key_schema = [
+        {
+            'AttributeName': 'PrimaryKey',
+            'KeyType': 'HASH'
+        }
+    ]
+
+    provisioned_throughput = {
+        'ReadCapacityUnits': 5,
+        'WriteCapacityUnits': 5
+    }
+    try:
+        table = dynamodb.create_table(
+            TableName=table_name,
+            KeySchema=key_schema,
+            AttributeDefinitions=attribute_definitions,
+            ProvisionedThroughput=provisioned_throughput
+        )
+        dynamodb.get_waiter('table_exists').wait(TableName=table_name)
+        print(f"[SUCCESS] DynamoDB Table created!")
+    except Exception as error:
+        print(f"[ ERROR ] Unable to create the DynamoDB Table: {error}")
+else:
+    print(f"> RDS is not set to deploy")
 
 # -----------------------------------------------------------------------------------------------
 # monitor.sh
@@ -312,10 +330,9 @@ try:
     cmd11 = f"ssh -i {KEY_FILE_LOCATION} -o StrictHostKeyChecking=no ec2-user@{new_instance.public_ip_address} 'uname -a'"
     subprocess.run(cmd11, shell=True, check=True)
 
-    #if setupdb == True:
+    # if setupdb == True:
     #    cmd10 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'mysql -h {endpointForDatabase} -u admin -padminadmin \"CREATE DATABASE devops;SHOW DATABASES;\"'"
     #    subprocess.run(cmd10, shell=True, check=True)
-
 
     cmd12 = f"scp -i {KEY_FILE_LOCATION} monitoring.sh ec2-user@{new_instance.public_ip_address}:."
     subprocess.run(cmd12, shell=True, check=True)
@@ -323,13 +340,9 @@ try:
     cmd13 = f"ssh -i {KEY_FILE_LOCATION} ec2-user@{new_instance.public_ip_address} 'chmod +x ./monitoring.sh && ./monitoring.sh'"
     subprocess.run(cmd13, shell=True, check=True)
 
-
-
     print("[SUCCESS] Monitoring script executed successfully")
 except Exception as error:
     print(f"[ ERROR ] Monitoring script failed due to: {error}")
-
-
 
 # -----------------------------------------------------------------------------------------------
 # COMPLETION
@@ -339,13 +352,13 @@ print("""-----------------------------
 SETUP COMPLETED
 -----------------------------""")
 
-
 # -----------------------------------------------------------------------------------------------
 # CLEANUP IF NECESSARY
 # -----------------------------------------------------------------------------------------------
 
 if len(sys.argv) > 1 and sys.argv[1] == '1':
-    print("[   !   ] First argument is 1, which means that the machine and s3 storage is initiated to be terminated and deleted 1 minute after setup completion")
+    print(
+        "[   !   ] First argument is 1, which means that the machine and s3 storage is initiated to be terminated and deleted 1 minute after setup completion")
     time.sleep(30)  # Wait for 1 minute
     print("[   !   ] Cleanup begins!")
     try:
@@ -376,6 +389,5 @@ if len(sys.argv) > 1 and sys.argv[1] == '1':
             print("[SUCCESS] RDS has been deleted.")
         except Exception as error:
             print(f"[ ERROR ] Error removing RDS: {error}")
-
 
 print("--==--EndOfScript--==--")
