@@ -1,2 +1,2 @@
-http://8b9413-ztoth.s3-website-us-east-1.amazonaws.com
-http://ec2-35-172-140-37.compute-1.amazonaws.com
+http://wskid5-ztoth.s3-website-us-east-1.amazonaws.com
+http://ec2-34-207-240-187.compute-1.amazonaws.com

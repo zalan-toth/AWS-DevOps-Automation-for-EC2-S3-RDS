@@ -12,16 +12,17 @@ import random
 # -----------------------------------------------------------------------------------------------
 # PRECONFIGURATION
 # -----------------------------------------------------------------------------------------------
+# Running the script with the (first) argument of 1 will make the script cleanup the instances it created 1 minute after the script completion!
 KEY_FILE_LOCATION = "./awsec.pem"
 KEY_PAIR_NAME = "awsec"
 SECURITY_GROUP_ID = 'sg-048aa87cffa88d78f'
 FILE_PATH_TO_INDEX_FILE = "./index.html"
-SETUP_RDS = False
-SETUP_DOCDB = False  # Student account is not permitted to deploy DocumentDB Instance unfortunately, but the code should work itself.
+SETUP_RDS = False  # RDS Deployment may take up to 15 minutes so setting this to True will slow down the scipt significantly as the program will wait for the deployment completion.
+SETUP_DOCDB = False  # Student account is not permitted to deploy DocumentDB Instance unfortunately, but the code should work itself (although I was not able to test it at all!)
 SETUP_DYNAMODB = True
 
 
-# Source for string gen: https://stackoverflow.com/questions/2257441/random-string-generation-with-upper-case-letters-and-digits
+# Source for string generation: https://stackoverflow.com/questions/2257441/random-string-generation-with-upper-case-letters-and-digits
 def id_generator(size=6, chars=string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -107,6 +108,7 @@ website_configuration = {
 }
 try:
     # Getting the image > Source https://stackoverflow.com/questions/4256107/running-bash-commands-in-python
+    # Yes I could use subprocess, however when I started the project I used this, so I kept it :-)
     os.system(f"curl -o {image_path} {image_url}")
 except Exception as error:
     print(f"[ ERROR ] An error occurred while downloading image: {error}")
