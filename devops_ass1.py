@@ -8,7 +8,7 @@ import sys
 import uuid
 import string
 import random
-
+# Made by Zalán Tóth 20102768
 # -----------------------------------------------------------------------------------------------
 # PRECONFIGURATION
 # -----------------------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ s3 = boto3.resource("s3")
 image_url = 'http://devops.witdemo.net/logo.jpg'
 image_path = '/tmp/logo.jpg'
 
-bucket_name = f"{id_generator()}-ztoth"  # using UUID instead of the shell commands
+bucket_name = f"{id_generator()}-ztoth"  # using id generator function
 file_path = FILE_PATH_TO_INDEX_FILE
 object_name = "index.html"
 website_configuration = {
