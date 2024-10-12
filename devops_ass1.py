@@ -284,10 +284,11 @@ else:
 # -----------------------------------------------------------------------------------------------
 # Extra stuff 3 - DynamoDB setup! https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html
 # -----------------------------------------------------------------------------------------------
-if SETUP_DYNAMODB == True:
+dynamodb = boto3.resource('dynamodb')
+table_name = 'DynamoTable'
+
+if SETUP_DYNAMODB:
     print(f"> Deploying DynamoDB Service")
-    dynamodb = boto3.client('dynamodb')
-    table_name = 'DynamoTable'
     attribute_definitions = [
         {
             'AttributeName': 'PrimaryKey',
@@ -306,19 +307,47 @@ if SETUP_DYNAMODB == True:
         'ReadCapacityUnits': 5,
         'WriteCapacityUnits': 5
     }
+
     try:
-        table = dynamodb.create_table(
+        createdTable = dynamodb.create_table(
             TableName=table_name,
             KeySchema=key_schema,
             AttributeDefinitions=attribute_definitions,
             ProvisionedThroughput=provisioned_throughput
         )
-        dynamodb.get_waiter('table_exists').wait(TableName=table_name)
+        dynamodb.meta.client.get_waiter('table_exists').wait(TableName=table_name)
         print(f"[SUCCESS] DynamoDB Table created!")
     except Exception as error:
         print(f"[ ERROR ] Unable to create the DynamoDB Table: {error}")
 else:
-    print(f"> RDS is not set to deploy")
+    print(f"> DynamoDB is not set to deploy")
+
+
+# Putting an item into DynamoDB
+if SETUP_DYNAMODB:
+    table = dynamodb.Table(table_name)
+    try:
+        response = table.put_item(
+            Item={
+                'PrimaryKey': '14',
+                'Attribute1': 'This is cool',
+                'Attribute2': 86
+            }
+        )
+        print("[SUCCESS] DynamoDB PutItem succeeded:", response)
+    except Exception as error:
+        print(f"[ ERROR ] DynamoDB PutItem failed: {error}")
+
+# Scanning the table in DynamoDB
+if SETUP_DYNAMODB:
+    try:
+        response = table.scan()
+        items = response.get('Items', [])
+        for item in items:
+            print(item)
+        print("[SUCCESS] DynamoDB Scan succeeded:", response)
+    except Exception as error:
+        print(f"[ ERROR ] DynamoDB Scan failed: {error}")
 
 # -----------------------------------------------------------------------------------------------
 # monitor.sh
@@ -359,7 +388,7 @@ SETUP COMPLETED
 if len(sys.argv) > 1 and sys.argv[1] == '1':
     print(
         "[   !   ] First argument is 1, which means that the machine and s3 storage is initiated to be terminated and deleted 1 minute after setup completion")
-    time.sleep(30)  # Wait for 1 minute
+    time.sleep(60)  # Wait for 1 minute
     print("[   !   ] Cleanup begins!")
     try:
         print(f"> Deleting EC2 instance! Be patient. ({new_instance.id})")
@@ -389,5 +418,15 @@ if len(sys.argv) > 1 and sys.argv[1] == '1':
             print("[SUCCESS] RDS has been deleted.")
         except Exception as error:
             print(f"[ ERROR ] Error removing RDS: {error}")
+
+    if SETUP_DYNAMODB == True:
+        try:
+            print("> Deleting DynamoDB table...")
+            response = table.delete()
+            print(f"> Table {table_name} is being deleted!")
+            table.meta.client.get_waiter('table_not_exists').wait(TableName=table_name)
+            print("[SUCCESS] DynamoDB Table has been deleted.")
+        except Exception as error:
+            print(f"[ ERROR ] Error removing table from DynamoDB: {error}")
 
 print("--==--EndOfScript--==--")
